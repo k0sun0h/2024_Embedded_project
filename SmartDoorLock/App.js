@@ -1,15 +1,19 @@
 import React from 'react'; // 리액트를 임포트
 import { NavigationContainer } from '@react-navigation/native'; // 내비게이션 컨테이너 임포트
+import { createStackNavigator } from '@react-navigation/stack'; // 스택 내비게이터 임포트
+import LoginScreen from './components/LoginScreen'; // 로그인 스크린 컴포넌트 임포트
 import AppNavigator from './navigation/AppNavigator'; // 앱 내비게이터 컴포넌트 임포트
 import { Image, StyleSheet, View } from 'react-native'; // 이미지, 스타일시트, 뷰 컴포넌트 임포트
+
+const Stack = createStackNavigator(); // 스택 내비게이터 생성
 
 export default function App() { // App 컴포넌트 정의
   return (
     <NavigationContainer> {/* 내비게이션 컨테이너로 앱 감싸기 */}
-      <View style={styles.container}> {/* 로고와 내비게이터를 포함하는 뷰 */}
-        <Image source={require('./assets/icon.png')} style={styles.logo} /> {/* 로고 이미지 표시 */}
-        <AppNavigator /> {/* 앱 내비게이터 컴포넌트 */}
-      </View>
+      <Stack.Navigator initialRouteName="Login"> {/* 초기 경로를 로그인으로 설정 */}
+        <Stack.Screen name="Login" component={LoginScreen} /> {/* 로그인 스크린 설정 */}
+        <Stack.Screen name="Home" component={AppNavigator} /> {/* 홈 스크린 설정 */}
+      </Stack.Navigator>
     </NavigationContainer>
   );
 }
