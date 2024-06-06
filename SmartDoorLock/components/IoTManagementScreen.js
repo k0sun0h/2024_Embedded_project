@@ -1,12 +1,12 @@
-import React, { useState } from 'react'; // 리액트와 useState 훅 임포트
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native'; // 뷰, 텍스트, 텍스트 입력, 버튼, 스타일시트 컴포넌트 임포트
+import React, { useState } from 'react'; // 리액트와 useState 훅을 임포트
+import { View, Text, TextInput, Button, StyleSheet } from 'react-native'; // 필요한 리액트 네이티브 컴포넌트들을 임포트
 
-export default function IoTManagementScreen() { // IoTManagementScreen 컴포넌트 정의
-  const [temperatureAC, setTemperatureAC] = useState(''); // 에어컨 온도 상태 정의
-  const [temperatureHeat, setTemperatureHeat] = useState(''); // 난방 온도 상태 정의
-  const [curtainState, setCurtainState] = useState(''); // 커튼 상태 정의
-  const [lightRGB, setLightRGB] = useState(''); // 조명 RGB 값 상태 정의
-  const [tvState, setTvState] = useState(''); // TV 상태 정의
+export default function IoTManagementScreen() { // IoTManagementScreen 컴포넌트를 정의
+  const [temperatureAC, setTemperatureAC] = useState(''); // 에어컨 온도 상태를 정의
+  const [temperatureHeat, setTemperatureHeat] = useState(''); // 난방 온도 상태를 정의
+  const [curtainState, setCurtainState] = useState(''); // 커튼 상태를 정의
+  const [lightRGB, setLightRGB] = useState(''); // 조명 RGB 값 상태를 정의
+  const [tvState, setTvState] = useState(''); // TV 상태를 정의
 
   const saveSettings = () => { // 설정값 저장 함수 정의
     const settings = { // 설정 객체 생성
@@ -20,7 +20,7 @@ export default function IoTManagementScreen() { // IoTManagementScreen 컴포넌
     // 여기서 입력된 설정값을 저장하는 로직 추가
   };
 
-  return ( // 화면에 표시할 JSX 반환
+  return (
     <View style={styles.container}> {/* 컨테이너 뷰 */}
       <Text>IoT 설정 관리</Text> {/* IoT 설정 관리 텍스트 */}
       

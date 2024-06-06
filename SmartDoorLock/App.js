@@ -11,14 +11,29 @@ export default function App() { // App 컴포넌트 정의
   return (
     <NavigationContainer> {/* 내비게이션 컨테이너로 앱 감싸기 */}
       <Stack.Navigator initialRouteName="Login"> {/* 초기 경로를 로그인으로 설정 */}
-        <Stack.Screen name="Login" component={LoginScreen} /> {/* 로그인 스크린 설정 */}
+        <Stack.Screen 
+          name="Login" 
+          component={LoginScreen}
+          options={{
+            headerTitle: props => <LogoTitle {...props} />, // 여기에 로고를 표시
+          }}
+        />
         <Stack.Screen name="Home" component={AppNavigator} /> {/* 홈 스크린 설정 */}
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
 
-const styles = StyleSheet.create({ // 스타일시트 정의
+function LogoTitle() {
+  return (
+    <Image
+      style={{ width: 50, height: 50 }}
+      source={require('./assets/icon.png')}
+    />
+  );
+}
+
+const styles = StyleSheet.create({
   container: { // 뷰 컨테이너 스타일
     flex: 1,
     alignItems: 'center', // 가로 방향으로 중앙 정렬
