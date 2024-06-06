@@ -20,6 +20,22 @@
 - 데이터베이스: MongoDB
 - IoT 통신: MQTT
 
-## 파일 구조
-- client: React Native 앱 소스 코드
-- docs: 문서 및 계획서
+## 구조
+SmartDoorLock
+├── assets
+│   └── icon.png
+├── components
+│   ├── ConceptCodeSettingScreen.js
+│   ├── IoTManagementScreen.js
+│   ├── LoginScreen.js
+│   ├── MainScreen.js
+│   └── PasswordSettingScreen.js
+├── navigation
+│   └── AppNavigator.js
+├── node_modules
+├── App.js
+├── app.json
+├── babel.config.js
+├── package-lock.json
+├── package.json
+└── README.md
