@@ -1,16 +1,15 @@
-//d1 r1
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 
 const char* ssid = "your_SSID";
 const char* password = "your_PASSWORD";
 
-const int macroButtonPins[] = {D1, D2, D3, D4}; // Macro buttons
-const int doorSensorPin = D5; // Door sensor
+const int macroButtonPins[] = {D1, D2, D3, D4}; // 매크로 버튼
+const int doorSensorPin = D5; // 도어 센서
 
 void setup() {
   Serial.begin(115200);
-  Serial.swap(); // Use TX=D7, RX=D8 for Serial
+  Serial.swap(); // TX=D7, RX=D8을 시리얼로 사용
 
   for (int i = 0; i < 4; i++) {
     pinMode(macroButtonPins[i], INPUT_PULLUP);
@@ -22,25 +21,25 @@ void setup() {
     delay(500);
     Serial.print(".");
   }
-  Serial.println("WiFi connected");
+  Serial.println("WiFi 연결됨");
 }
 
 void loop() {
   for (int i = 0; i < 4; i++) {
     if (digitalRead(macroButtonPins[i]) == LOW) {
-      Serial.print("Macro button ");
+      Serial.print("매크로 버튼 ");
       Serial.print(i + 1);
-      Serial.println(" pressed");
+      Serial.println(" 눌림");
 
       while (digitalRead(doorSensorPin) == HIGH) {
         delay(100);
       }
-      Serial.println("Door opened");
+      Serial.println("문 열림");
 
-      // Send button press and door open event to Uno board
+      // 버튼 누름과 문 열림 이벤트를 Uno 보드에 전송
       Serial.print("MACRO_");
       Serial.println(i + 1);
-      delay(1000); // Debounce delay
+      delay(1000); // 디바운스 딜레이
     }
   }
 }

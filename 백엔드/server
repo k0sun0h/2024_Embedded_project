@@ -2,11 +2,11 @@ const express = require('express');
 const mysql = require('mysql');
 
 const app = express();
-const port = 3000; // The port your API will run on
+const port = 3000; // API가 실행될 포트
 
-app.use(express.json()); // Middleware to parse JSON bodies
+app.use(express.json()); // JSON 바디를 파싱하기 위한 미들웨어
 
-// Create MySQL connection
+// MySQL 연결 생성
 const connection = mysql.createConnection({
   host: 'localhost',
   user: 'root',
@@ -15,7 +15,7 @@ const connection = mysql.createConnection({
   port: 3306
 });
 
-// Handle MySQL disconnection
+// MySQL 연결 끊김 처리 함수
 function handleDisconnect(connection) {
   connection.on('error', function (err) {
     if (!err.fatal) {
@@ -26,7 +26,7 @@ function handleDisconnect(connection) {
       throw err;
     }
 
-    console.log('Re-connecting lost connection: ' + err.stack);
+    console.log('재연결 중: ' + err.stack);
 
     connection = mysql.createConnection(connection.config);
     handleDisconnect(connection);
@@ -34,26 +34,26 @@ function handleDisconnect(connection) {
   });
 }
 
-// Connect to MySQL and handle disconnection
+// MySQL에 연결하고 끊김 처리
 connection.connect((err) => {
   if (err) {
-    console.error('Error connecting to MySQL:', err.stack);
+    console.error('MySQL 연결 오류:', err.stack);
     return;
   }
-  console.log('Connected to MySQL as ID', connection.threadId);
+  console.log('MySQL에 연결됨, ID:', connection.threadId);
   handleDisconnect(connection);
 });
 
-// Function to generate HTML table from query results
+// 쿼리 결과로 HTML 테이블 생성 함수
 function generateHtmlTable(results) {
   let html = '<table border="1">';
-  // Add table headers
+  // 테이블 헤더 추가
   html += '<tr>';
   for (const column in results[0]) {
     html += `<th>${column}</th>`;
   }
   html += '</tr>';
-  // Add table rows
+  // 테이블 행 추가
   results.forEach(row => {
     html += '<tr>';
     for (const column in row) {
@@ -65,7 +65,7 @@ function generateHtmlTable(results) {
   return html;
 }
 
-// Define a simple route
+// 간단한 라우트 정의
 app.get('/', (req, res) => {
   res.send(`
     <!DOCTYPE html>
@@ -76,12 +76,12 @@ app.get('/', (req, res) => {
       <title>Smart Concept Door API</title>
     </head>
     <body>
-      <h1>Welcome to Smart Concept Door API</h1>
-      <button onclick="fetchTableData('users')">Fetch Users</button>
-      <button onclick="fetchTableData('wifi_connections')">Fetch WiFi Connections</button>
-      <button onclick="fetchTableData('iot_devices_status')">Fetch IoT Devices Status</button>
-      <button onclick="fetchTableData('door_status')">Fetch Door Status</button>
-      <button onclick="fetchTableData('macros')">Fetch Macros</button>
+      <h1>Smart Concept Door API에 오신 것을 환영합니다</h1>
+      <button onclick="fetchTableData('users')">사용자 정보 가져오기</button>
+      <button onclick="fetchTableData('wifi_connections')">WiFi 연결 상태 가져오기</button>
+      <button onclick="fetchTableData('iot_devices_status')">IoT 장치 상태 가져오기</button>
+      <button onclick="fetchTableData('door_status')">문 상태 가져오기</button>
+      <button onclick="fetchTableData('macros')">매크로 가져오기</button>
       <div id="tableContainer"></div>
 
       <script>
@@ -91,7 +91,7 @@ app.get('/', (req, res) => {
             const data = await response.text();
             document.getElementById('tableContainer').innerHTML = data;
           } catch (error) {
-            console.error('Error fetching table data:', error);
+            console.error('테이블 데이터 가져오기 오류:', error);
           }
         }
       </script>
@@ -100,12 +100,12 @@ app.get('/', (req, res) => {
   `);
 });
 
-// Define a route to fetch users
+// 사용자 정보를 가져오는 라우트 정의
 app.get('/users', (req, res) => {
   connection.query('SELECT * FROM User', (err, results) => {
     if (err) {
-      console.error('Error executing query:', err.stack);
-      res.status(500).send('Error fetching data');
+      console.error('쿼리 실행 오류:', err.stack);
+      res.status(500).send('데이터 가져오기 오류');
       return;
     }
     const tableHtml = generateHtmlTable(results);
@@ -113,12 +113,12 @@ app.get('/users', (req, res) => {
   });
 });
 
-// Define a route to fetch WiFi connection status
+// WiFi 연결 상태를 가져오는 라우트 정의
 app.get('/wifi_connections', (req, res) => {
   connection.query('SELECT * FROM Wifi_Connection', (err, results) => {
     if (err) {
-      console.error('Error executing query:', err.stack);
-      res.status(500).send('Error fetching data');
+      console.error('쿼리 실행 오류:', err.stack);
+      res.status(500).send('데이터 가져오기 오류');
       return;
     }
     const tableHtml = generateHtmlTable(results);
@@ -126,12 +126,12 @@ app.get('/wifi_connections', (req, res) => {
   });
 });
 
-// Define a route to fetch IoT device status
+// IoT 장치 상태를 가져오는 라우트 정의
 app.get('/iot_devices_status', (req, res) => {
   connection.query('SELECT * FROM IoT_Devices_Status', (err, results) => {
     if (err) {
-      console.error('Error executing query:', err.stack);
-      res.status(500).send('Error fetching data');
+      console.error('쿼리 실행 오류:', err.stack);
+      res.status(500).send('데이터 가져오기 오류');
       return;
     }
     const tableHtml = generateHtmlTable(results);
@@ -139,12 +139,12 @@ app.get('/iot_devices_status', (req, res) => {
   });
 });
 
-// Define a route to fetch door status
+// 문 상태를 가져오는 라우트 정의
 app.get('/door_status', (req, res) => {
   connection.query('SELECT * FROM Door_Status', (err, results) => {
     if (err) {
-      console.error('Error executing query:', err.stack);
-      res.status(500).send('Error fetching data');
+      console.error('쿼리 실행 오류:', err.stack);
+      res.status(500).send('데이터 가져오기 오류');
       return;
     }
     const tableHtml = generateHtmlTable(results);
@@ -152,12 +152,12 @@ app.get('/door_status', (req, res) => {
   });
 });
 
-// Define a route to fetch macro data
+// 매크로 데이터를 가져오는 라우트 정의
 app.get('/macros', (req, res) => {
   connection.query('SELECT * FROM Macro', (err, results) => {
     if (err) {
-      console.error('Error executing query:', err.stack);
-      res.status(500).send('Error fetching data');
+      console.error('쿼리 실행 오류:', err.stack);
+      res.status(500).send('데이터 가져오기 오류');
       return;
     }
     const tableHtml = generateHtmlTable(results);
@@ -165,20 +165,18 @@ app.get('/macros', (req, res) => {
   });
 });
 
-// Start the server
+// 서버 시작
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`서버가 포트 ${port}에서 실행 중`);
 });
 
-// Close the connection gracefully on exit
+// 종료 시 연결을 정상적으로 닫기
 process.on('SIGINT', () => {
   connection.end((err) => {
     if (err) {
-      console.error('Error ending the connection:', err.stack);
+      console.error('연결 종료 오류:', err.stack);
     }
-    console.log('Connection to MySQL closed');
+    console.log('MySQL 연결 종료');
     process.exit();
   });
 });
-
-이건 서버 코드
