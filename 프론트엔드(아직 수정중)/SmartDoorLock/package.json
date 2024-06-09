@@ -1,0 +1,27 @@
+{
+  "name": "SmartDoorLock",
+  "version": "1.0.0",
+  "main": "node_modules/expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "~1.17.3",
+    "@react-navigation/bottom-tabs": "^6.0.9",
+    "@react-navigation/native": "^6.0.6",
+    "expo": "^51.0.10",
+    "react": "17.0.2",
+    "react-dom": "17.0.2",
+    "react-native": "^0.74.2",
+    "react-native-web": "0.17.7"
+  },
+  "devDependencies": {
+    "babel-preset-expo": "8.4.1",
+    "expo-cli": "^4.0.17"
+  },
+  "private": true
+}
