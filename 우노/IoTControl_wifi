@@ -1,0 +1,200 @@
+#include <LiquidCrystal_I2C.h>
+#include <Adafruit_NeoPixel.h>
+#include <Wire.h>
+#include <ArduinoJson.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+
+const int tvLedPin = 6; // TV power control LED
+const int rgbLedPin = 7; // RGB LED for lighting
+const int motorIn1Pin = 8; // Motor driver IN1
+const int motorIn2Pin = 9; // Motor driver IN2
+const int motorEnablePin = 10; // Motor driver enable pin
+
+LiquidCrystal_I2C lcd1(0x27, 16, 2);
+LiquidCrystal_I2C lcd2(0x26, 16, 2);
+Adafruit_NeoPixel rgbLed(1, rgbLedPin, NEO_GRB + NEO_KHZ800);
+
+const char* ssid = "your_SSID";
+const char* password = "your_PASSWORD";
+const char* deviceStatusUrl = "http://192.168.219.100:3000/iot_devices_status";
+const char* macrosUrl = "http://192.168.219.100:3000/macros";
+
+StaticJsonDocument<2048> deviceStatusDoc;
+StaticJsonDocument<2048> macrosDoc;
+
+void setup() {
+  Serial.begin(115200);
+
+  pinMode(tvLedPin, OUTPUT);
+  pinMode(motorIn1Pin, OUTPUT);
+  pinMode(motorIn2Pin, OUTPUT);
+  pinMode(motorEnablePin, OUTPUT);
+
+  lcd1.begin();
+  lcd1.backlight();
+  lcd2.begin();
+  lcd2.backlight();
+
+  rgbLed.begin();
+  rgbLed.show();
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("WiFi connected");
+
+  fetchDeviceStatus();
+  fetchMacros();
+}
+
+void loop() {
+  if (Serial.available()) {
+    String command = Serial.readStringUntil('\n');
+    Serial.print("Received command: ");
+    Serial.println(command);
+
+    if (command.startsWith("MACRO_")) {
+      int macroNumber = command.substring(6).toInt();
+      executeMacro(macroNumber);
+    }
+  }
+}
+
+void fetchDeviceStatus() {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    http.begin(deviceStatusUrl);
+    int httpResponseCode = http.GET();
+
+    if (httpResponseCode > 0) {
+      String payload = http.getString();
+      Serial.println("Device Status Data: ");
+      Serial.println(payload);
+      deserializeJson(deviceStatusDoc, payload);
+    } else {
+      Serial.print("Error on HTTP request: ");
+      Serial.println(httpResponseCode);
+    }
+    http.end();
+  } else {
+    Serial.println("WiFi not connected");
+  }
+}
+
+void fetchMacros() {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    http.begin(macrosUrl);
+    int httpResponseCode = http.GET();
+
+    if (httpResponseCode > 0) {
+      String payload = http.getString();
+      Serial.println("Macros Data: ");
+      Serial.println(payload);
+      deserializeJson(macrosDoc, payload);
+    } else {
+      Serial.print("Error on HTTP request: ");
+      Serial.println(httpResponseCode);
+    }
+    http.end();
+  } else {
+    Serial.println("WiFi not connected");
+  }
+}
+
+void executeMacro(int buttonNumber) {
+  for (JsonObject macro : macrosDoc.as<JsonArray>()) {
+    if (macro["button_number"] == buttonNumber) {
+      Serial.print("Executing macro: ");
+      Serial.println(macro["concept_name"].as<const char*>());
+
+      for (int i = 1; i <= 5; i++) {
+        if (!macro["device_id_" + String(i)].isNull()) {
+          int deviceId = macro["device_id_" + String(i)];
+          const char* deviceName = macro["device_name_" + String(i)];
+          const char* concept = macro["concept_" + String(i)];
+
+          Serial.print("Device: ");
+          Serial.print(deviceName);
+          Serial.print(" - Concept: ");
+          Serial.println(concept);
+
+          // Control devices based on device_id and concept
+          controlDevice(deviceId, concept);
+        }
+      }
+      break;
+    }
+  }
+}
+
+void controlDevice(int deviceId, const char* concept) {
+  for (JsonObject deviceStatus : deviceStatusDoc.as<JsonArray>()) {
+    if (deviceStatus["device_id"] == deviceId) {
+      const char* status = deviceStatus["status"];
+
+      // Implement device control logic based on status and concept
+      if (deviceId == 1 || deviceId == 2) { // Air conditioner
+        displayTemperature(concept, lcd1);
+      } else if (deviceId == 3 || deviceId == 4) { // Heating
+        displayTemperature(concept, lcd2);
+      } else if (deviceId == 5 || deviceId == 6) { // Curtain
+        controlCurtain(concept);
+      } else if (deviceId == 7 || deviceId == 8) { // Lighting
+        controlLighting(concept);
+      } else if (deviceId == 9 || deviceId == 10) { // TV
+        controlTV(status);
+      }
+      break; // Exit loop once device is found
+    }
+  }
+}
+
+void displayTemperature(const char* temperature, LiquidCrystal_I2C lcd) {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Temperature: ");
+  lcd.setCursor(0, 1);
+  lcd.print(temperature);
+}
+
+void controlTV(const char* status) {
+  if (strcmp(status, "on") == 0) {
+    digitalWrite(tvLedPin, HIGH);
+  } else if (strcmp(status, "off") == 0) {
+    digitalWrite(tvLedPin, LOW);
+  }
+}
+
+void controlLighting(const char* concept) {
+  if (strcmp(concept, "off") == 0) {
+    rgbLed.setPixelColor(0, rgbLed.Color(0, 0, 0)); // Turn off
+  } else if (strcmp(concept, "red") == 0) {
+    rgbLed.setPixelColor(0, rgbLed.Color(255, 0, 0)); // Red
+  } else if (strcmp(concept, "green") == 0) {
+    rgbLed.setPixelColor(0, rgbLed.Color(0, 255, 0)); // Green
+  } else if (strcmp(concept, "blue") == 0) {
+    rgbLed.setPixelColor(0, rgbLed.Color(0, 0, 255)); // Blue
+  }
+  rgbLed.show();
+}
+
+void controlCurtain(const char* concept) {
+  if (strcmp(concept, "open") == 0) {
+    digitalWrite(motorIn1Pin, HIGH);
+    digitalWrite(motorIn2Pin, LOW);
+    analogWrite(motorEnablePin, 255); // Full speed
+  } else if (strcmp(concept, "close") == 0) {
+    digitalWrite(motorIn1Pin, LOW);
+    digitalWrite(motorIn2Pin, HIGH);
+    analogWrite(motorEnablePin, 255); // Full speed
+  } else {
+    // Stop the motor
+    digitalWrite(motorIn1Pin, LOW);
+    digitalWrite(motorIn2Pin, LOW);
+    analogWrite(motorEnablePin, 0);
+  }
+}

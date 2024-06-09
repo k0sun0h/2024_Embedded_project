@@ -1,0 +1,46 @@
+//d1 r1
+#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+
+const char* ssid = "your_SSID";
+const char* password = "your_PASSWORD";
+
+const int macroButtonPins[] = {D1, D2, D3, D4}; // Macro buttons
+const int doorSensorPin = D5; // Door sensor
+
+void setup() {
+  Serial.begin(115200);
+  Serial.swap(); // Use TX=D7, RX=D8 for Serial
+
+  for (int i = 0; i < 4; i++) {
+    pinMode(macroButtonPins[i], INPUT_PULLUP);
+  }
+  pinMode(doorSensorPin, INPUT_PULLUP);
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("WiFi connected");
+}
+
+void loop() {
+  for (int i = 0; i < 4; i++) {
+    if (digitalRead(macroButtonPins[i]) == LOW) {
+      Serial.print("Macro button ");
+      Serial.print(i + 1);
+      Serial.println(" pressed");
+
+      while (digitalRead(doorSensorPin) == HIGH) {
+        delay(100);
+      }
+      Serial.println("Door opened");
+
+      // Send button press and door open event to Uno board
+      Serial.print("MACRO_");
+      Serial.println(i + 1);
+      delay(1000); // Debounce delay
+    }
+  }
+}

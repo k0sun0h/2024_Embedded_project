@@ -1,0 +1,184 @@
+const express = require('express');
+const mysql = require('mysql');
+
+const app = express();
+const port = 3000; // The port your API will run on
+
+app.use(express.json()); // Middleware to parse JSON bodies
+
+// Create MySQL connection
+const connection = mysql.createConnection({
+  host: 'localhost',
+  user: 'root',
+  password: 'tlsgusqls77',
+  database: 'SmartConceptDoor',
+  port: 3306
+});
+
+// Handle MySQL disconnection
+function handleDisconnect(connection) {
+  connection.on('error', function (err) {
+    if (!err.fatal) {
+      return;
+    }
+
+    if (err.code !== 'PROTOCOL_CONNECTION_LOST') {
+      throw err;
+    }
+
+    console.log('Re-connecting lost connection: ' + err.stack);
+
+    connection = mysql.createConnection(connection.config);
+    handleDisconnect(connection);
+    connection.connect();
+  });
+}
+
+// Connect to MySQL and handle disconnection
+connection.connect((err) => {
+  if (err) {
+    console.error('Error connecting to MySQL:', err.stack);
+    return;
+  }
+  console.log('Connected to MySQL as ID', connection.threadId);
+  handleDisconnect(connection);
+});
+
+// Function to generate HTML table from query results
+function generateHtmlTable(results) {
+  let html = '<table border="1">';
+  // Add table headers
+  html += '<tr>';
+  for (const column in results[0]) {
+    html += `<th>${column}</th>`;
+  }
+  html += '</tr>';
+  // Add table rows
+  results.forEach(row => {
+    html += '<tr>';
+    for (const column in row) {
+      html += `<td>${row[column]}</td>`;
+    }
+    html += '</tr>';
+  });
+  html += '</table>';
+  return html;
+}
+
+// Define a simple route
+app.get('/', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Smart Concept Door API</title>
+    </head>
+    <body>
+      <h1>Welcome to Smart Concept Door API</h1>
+      <button onclick="fetchTableData('users')">Fetch Users</button>
+      <button onclick="fetchTableData('wifi_connections')">Fetch WiFi Connections</button>
+      <button onclick="fetchTableData('iot_devices_status')">Fetch IoT Devices Status</button>
+      <button onclick="fetchTableData('door_status')">Fetch Door Status</button>
+      <button onclick="fetchTableData('macros')">Fetch Macros</button>
+      <div id="tableContainer"></div>
+
+      <script>
+        async function fetchTableData(tableName) {
+          try {
+            const response = await fetch('http://localhost:3000/' + tableName);
+            const data = await response.text();
+            document.getElementById('tableContainer').innerHTML = data;
+          } catch (error) {
+            console.error('Error fetching table data:', error);
+          }
+        }
+      </script>
+    </body>
+    </html>
+  `);
+});
+
+// Define a route to fetch users
+app.get('/users', (req, res) => {
+  connection.query('SELECT * FROM User', (err, results) => {
+    if (err) {
+      console.error('Error executing query:', err.stack);
+      res.status(500).send('Error fetching data');
+      return;
+    }
+    const tableHtml = generateHtmlTable(results);
+    res.send(tableHtml);
+  });
+});
+
+// Define a route to fetch WiFi connection status
+app.get('/wifi_connections', (req, res) => {
+  connection.query('SELECT * FROM Wifi_Connection', (err, results) => {
+    if (err) {
+      console.error('Error executing query:', err.stack);
+      res.status(500).send('Error fetching data');
+      return;
+    }
+    const tableHtml = generateHtmlTable(results);
+    res.send(tableHtml);
+  });
+});
+
+// Define a route to fetch IoT device status
+app.get('/iot_devices_status', (req, res) => {
+  connection.query('SELECT * FROM IoT_Devices_Status', (err, results) => {
+    if (err) {
+      console.error('Error executing query:', err.stack);
+      res.status(500).send('Error fetching data');
+      return;
+    }
+    const tableHtml = generateHtmlTable(results);
+    res.send(tableHtml);
+  });
+});
+
+// Define a route to fetch door status
+app.get('/door_status', (req, res) => {
+  connection.query('SELECT * FROM Door_Status', (err, results) => {
+    if (err) {
+      console.error('Error executing query:', err.stack);
+      res.status(500).send('Error fetching data');
+      return;
+    }
+    const tableHtml = generateHtmlTable(results);
+    res.send(tableHtml);
+  });
+});
+
+// Define a route to fetch macro data
+app.get('/macros', (req, res) => {
+  connection.query('SELECT * FROM Macro', (err, results) => {
+    if (err) {
+      console.error('Error executing query:', err.stack);
+      res.status(500).send('Error fetching data');
+      return;
+    }
+    const tableHtml = generateHtmlTable(results);
+    res.send(tableHtml);
+  });
+});
+
+// Start the server
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
+
+// Close the connection gracefully on exit
+process.on('SIGINT', () => {
+  connection.end((err) => {
+    if (err) {
+      console.error('Error ending the connection:', err.stack);
+    }
+    console.log('Connection to MySQL closed');
+    process.exit();
+  });
+});
+
+이건 서버 코드

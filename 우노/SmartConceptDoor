@@ -1,0 +1,185 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// LCD 설정
+LiquidCrystal_I2C lcd(0x27, 16, 2); // I2C 주소가 0x27인 LCD
+
+// 핀 설정
+#define sensorPin A0      // 마그네틱 센서가 연결된 핀
+#define BUTTON1 2         // 1번 버튼 핀
+#define BUTTON2 3         // 2번 버튼 핀
+#define BUTTON3 4         // 3번 버튼 핀
+#define BUTTON4 5         // 4번 버튼 핀
+#define RED_PIN 6         // 삼색 LED 빨강 핀
+#define GREEN_PIN 7       // 삼색 LED 초록 핀
+#define BLUE_PIN 8        // 삼색 LED 파랑 핀
+#define TV_LED_PIN 9      // TV LED 핀
+int LIGHT_RGB_PIN_R = 10; // 조명 RGB LED 빨강 핀
+int LIGHT_RGB_PIN_G = 11; // 조명 RGB LED 초록 핀
+int LIGHT_RGB_PIN_B = 12; // 조명 RGB LED 파랑 핀
+
+int sensorState = 0;        // 마그네틱 센서 상태
+int lastButtonPressed = 0;  // 마지막으로 눌린 버튼 번호
+bool sensorMessageDisplayed = false; // Flag to track whether the sensor message has been displayed
+
+// 매크로 버튼 데이터 구조체 정의
+struct MacroButton {
+  int button_number;
+  const char* concept_name;
+  int device_id_1;
+  const char* device_name_1;
+  const char* concept_1;
+  int device_id_2;
+  const char* device_name_2;
+  const char* concept_2;
+  int device_id_3;
+  const char* device_name_3;
+  const char* concept_3;
+  int device_id_4;
+  const char* device_name_4;
+  const char* concept_4;
+};
+
+// 매크로 버튼 데이터 초기화
+MacroButton macroButtons[] = {
+  {1, "summer rest", 1, "air conditioner", "18", 5, "curtain", "close", 3, "lighting", "(000, 255, 255)", 4, "TV", "on"},
+  {2, "Summer office work", 1, "Air conditioner", "18", 5, "Curtain", "close", 3, "Lighting", "(144, 238, 144)", 4, "TV", "off"},
+  {3, "Winter rest", 2, "Heating", "25", 5, "Curtain", "close", 3, "Lighting", "(255, 127, 080)", 4, "TV", "on"},
+  {4, "Winter office work", 2, "Heating", "22", 5, "Curtain", "close", 3, "Lighting", "(255, 228, 196)", 4, "TV", "off"}
+};
+
+void setup() {
+  // Initialize Wire library without any arguments
+  Wire.begin(); 
+  
+  pinMode(sensorPin, INPUT_PULLUP); // 센서 핀을 입력 풀업으로 설정
+  pinMode(BUTTON1, INPUT);          // 1번 버튼 입력
+  pinMode(BUTTON2, INPUT);          // 2번 버튼 입력
+  pinMode(BUTTON3, INPUT);          // 3번 버튼 입력
+  pinMode(BUTTON4, INPUT);          // 4번 버튼 입력
+  pinMode(RED_PIN, OUTPUT);         // 삼색 LED 빨강 핀
+  pinMode(GREEN_PIN, OUTPUT);       // 삼색 LED 초록 핀
+  pinMode(BLUE_PIN, OUTPUT);        // 삼색 LED 파랑 핀
+  pinMode(TV_LED_PIN, OUTPUT);      // TV LED 핀을 출력으로 설정
+  pinMode(LIGHT_RGB_PIN_R, OUTPUT); // 조명 RGB LED 빨강 핀을 출력으로 설정
+  pinMode(LIGHT_RGB_PIN_G, OUTPUT); // 조명 RGB LED 초록 핀을 출력으로 설정
+  pinMode(LIGHT_RGB_PIN_B, OUTPUT); // 조명 RGB LED 파랑 핀
+  
+  lcd.init();      // LCD 초기화
+  lcd.backlight(); // LCD 백라이트 켜기
+  Serial.begin(115200); // 시리얼 통신 시작
+}
+
+void loop() {
+  
+  // 버튼 상태 읽기
+  if (digitalRead(BUTTON1) == LOW) {
+    lastButtonPressed = 1;
+    Serial.println("Button 1 was pressed.");
+  } else if (digitalRead(BUTTON2) == LOW) {
+    lastButtonPressed = 2;
+    Serial.println("Button 2 was pressed.");
+  } else if (digitalRead(BUTTON3) == LOW) {
+    lastButtonPressed = 3;
+    Serial.println("Button 3 was pressed.");
+  } else if (digitalRead(BUTTON4) == LOW) {
+    lastButtonPressed = 4;
+    Serial.println("Button 4 was pressed.");
+  }
+  
+  sensorState = digitalRead(sensorPin); // 센서 상태 읽기
+  Serial.print("Sensor status: ");
+  Serial.println(sensorState); // 센서 상태를 디버깅 출력
+
+  if (sensorState == LOW && !sensorMessageDisplayed) { // 문이 열렸을 때만 동작
+    Serial.println("The door is open."); // 문이 열렸음을 출력
+    sensorMessageDisplayed = true; // 센서 메시지가 표시되었음을 나타내는 플래그 설정
+
+    for (int i = 0; i < 4; i++) {
+      if (macroButtons[i].button_number == lastButtonPressed) {
+        controlDevices(macroButtons[i]); // 선택된 버튼에 따라 장치 제어
+        break;
+      }
+    }
+  } else if (sensorState == HIGH && sensorMessageDisplayed) {
+    sensorMessageDisplayed = false; // 문이 닫혔을 때 센서 메시지가 표시되지 않았음을 나타내는 플래그 재설정
+  }
+
+  delay(500);  // 500밀리초 지연
+}
+
+void controlDevices(MacroButton macroButton) {
+  Serial.print("Starting operation: ");
+  Serial.println(macroButton.concept_name);
+  
+  // 에어컨 또는 난방 제어
+  if (macroButton.device_id_1 == 1) {
+    Serial.print("Device: ");
+    Serial.print(macroButton.device_name_1);
+        Serial.print(", Status: ");
+    Serial.print(macroButton.concept_1);
+    Serial.println("C");
+    
+    lcd.clear(); // Clear the LCD screen
+    lcd.setCursor(0, 0); // Set cursor to the first column of the first row
+    lcd.print("Aircon: ");
+    lcd.print(macroButton.concept_1);
+    lcd.print("C");
+  } else if (macroButton.device_id_1 == 2) {
+    Serial.print("Device: ");
+    Serial.print(macroButton.device_name_1); // Corrected device name
+    Serial.print(", Status: ");
+    Serial.print(macroButton.concept_1); // Corrected concept
+    Serial.println("C");
+    
+    lcd.clear(); // Clear the LCD screen
+    lcd.setCursor(0, 0); // Set cursor to the first column of the first row
+    lcd.print("Heater: ");
+    lcd.print(macroButton.concept_1); // Corrected concept
+    lcd.print("C");
+  }
+  // TV control
+  if (macroButton.device_id_4 == 4) {
+    if (strcmp(macroButton.concept_4, "on") == 0) {
+      Serial.println("Device: TV, Status: ON");
+      digitalWrite(TV_LED_PIN, HIGH); // Turn on TV LED
+    } else {
+      Serial.println("Device: TV, Status: OFF");
+      digitalWrite(TV_LED_PIN, LOW); // Turn off TV LED
+    }
+  }
+  
+  // Lighting control
+int r, g, b;
+// Assign RGB values based on the button pressed
+if (lastButtonPressed == 1) {
+  r = 0;
+  g = 255;
+  b = 255; // Cyan color
+} else if (lastButtonPressed == 2) {
+  r = 144;
+  g = 238;
+  b = 144; // Light green color
+} else if (lastButtonPressed == 3) {
+  r = 255;
+  g = 127;
+  b = 80; // Orange color
+} else if (lastButtonPressed == 4) {
+  r = 255;
+  g = 228;
+  b = 196; // Light pink color
+}
+
+Serial.print("Device: RGB Lighting");
+Serial.print(", Status: (R: ");
+Serial.print(r);
+Serial.print(", G: ");
+Serial.print(g);
+Serial.print(", B: ");
+Serial.print(b);
+Serial.println(")");
+
+analogWrite(LIGHT_RGB_PIN_R, r); // Set red pin brightness
+analogWrite(LIGHT_RGB_PIN_G, g); // Set green pin brightness
+analogWrite(LIGHT_RGB_PIN_B, b); // Set blue pin brightness
+}
